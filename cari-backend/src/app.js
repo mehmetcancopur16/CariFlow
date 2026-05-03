@@ -10,6 +10,8 @@ const { connectDB } = require('./config/db');
 const swaggerSpec = require('./config/swagger');
 const errorMiddleware = require('./middlewares/error.middleware');
 const authRoutes = require('./routes/auth.routes');
+const clientRoutes = require('./routes/client.routes');
+const transactionRoutes = require('./routes/transaction.routes');
 
 const app = express();
 
@@ -25,6 +27,8 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/clients', clientRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 app.use(errorMiddleware);
 
