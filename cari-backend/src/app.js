@@ -9,6 +9,7 @@ const swaggerUi = require('swagger-ui-express');
 const { connectDB } = require('./config/db');
 const swaggerSpec = require('./config/swagger');
 const errorMiddleware = require('./middlewares/error.middleware');
+const authRoutes = require('./routes/auth.routes');
 
 const app = express();
 
@@ -22,6 +23,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get('/health', (req, res) => {
   res.json({ status: 'OK' });
 });
+
+app.use('/api/auth', authRoutes);
 
 app.use(errorMiddleware);
 
