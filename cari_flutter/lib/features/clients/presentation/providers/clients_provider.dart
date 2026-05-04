@@ -37,3 +37,10 @@ final clientsNotifierProvider =
     AsyncNotifierProvider<ClientsNotifier, List<ClientModel>>(
       ClientsNotifier.new,
     );
+
+final clientByIdProvider = FutureProvider.family<ClientModel, String>((
+  ref,
+  id,
+) {
+  return ref.read(clientRepositoryProvider).getClientById(id);
+});
