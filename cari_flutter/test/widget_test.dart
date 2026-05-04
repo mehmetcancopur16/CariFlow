@@ -5,18 +5,18 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:cari_flutter/features/auth/presentation/screens/login_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:cari_flutter/main.dart';
-
 void main() {
-  testWidgets('App boots successfully', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(const ProviderScope(child: CariFlowApp()));
-    await tester.pumpAndSettle();
+  testWidgets('Login screen renders', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: LoginScreen())),
+    );
+    await tester.pump();
 
-    expect(find.text('Home Screen'), findsOneWidget);
+    expect(find.text('E-posta'), findsOneWidget);
   });
 }

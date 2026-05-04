@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/presentation/providers/auth_provider.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/register_screen.dart';
+import '../features/clients/presentation/screens/client_detail_screen.dart';
+import '../features/clients/presentation/screens/clients_list_screen.dart';
 
 class RouterRefreshNotifier extends ChangeNotifier {
   RouterRefreshNotifier(this.ref) {
@@ -26,7 +28,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/',
         name: 'home',
-        builder: (context, state) => const HomeScreen(),
+        builder: (context, state) => const ClientsListScreen(),
+      ),
+      GoRoute(
+        path: '/client/:id',
+        name: 'client-detail',
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return ClientDetailScreen(id: id);
+        },
       ),
       GoRoute(
         path: '/login',
@@ -64,12 +74,3 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
   );
 });
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: Text('Home Screen')));
-  }
-}
