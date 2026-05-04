@@ -1,9 +1,11 @@
+const logger = require('../utils/logger');
+
 /**
  * Global error handler — must be registered after all routes.
  * @type {import('express').ErrorRequestHandler}
  */
 function errorMiddleware(err, req, res, next) {
-  console.error(err);
+  logger.error(err);
 
   const statusCode =
     err.statusCode && Number.isInteger(err.statusCode) ? err.statusCode : 500;
