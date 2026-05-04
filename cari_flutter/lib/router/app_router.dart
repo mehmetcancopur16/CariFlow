@@ -2,11 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../core/network/secure_storage_service.dart';
+import '../features/auth/presentation/providers/auth_provider.dart';
+import '../features/auth/presentation/screens/login_screen.dart';
+import '../features/auth/presentation/screens/register_screen.dart';
+
+class RouterRefreshNotifier extends ChangeNotifier {
+  RouterRefreshNotifier(this.ref) {
+    ref.listen<AsyncValue<AuthState>>(authNotifierProvider, (_, __) {
+      notifyListeners();
+    });
+  }
+
+  final Ref ref;
+}
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+  final refreshNotifier = RouterRefreshNotifier(ref);
+
   return GoRouter(
     initialLocation: '/',
+    refreshListenable: refreshNotifier,
     routes: [
       GoRoute(
         path: '/',
@@ -18,18 +33,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'login',
         builder: (context, state) => const LoginScreen(),
       ),
+      GoRoute(
+        path: '/register',
+        name: 'register',
+        builder: (context, state) => const RegisterScreen(),
+      ),
     ],
-    redirect: (context, state) async {
-      final storage = ref.read(secureStorageServiceProvider);
-      final token = await storage.readAccessToken();
-      final isLoggedIn = token != null && token.isNotEmpty;
-      final isLoginRoute = state.matchedLocation == '/login';
+    redirect: (context, state) {
+      final auth = ref.read(authNotifierProvider);
+      if (auth.isLoading) return null;
 
-      if (!isLoggedIn && !isLoginRoute) {
+      final isLoggedIn = auth.when(
+        data: (state) => state.isAuthenticated,
+        loading: () => false,
+        error: (_, __) => false,
+      );
+      final isLoginRoute = state.matchedLocation == '/login';
+      final isRegisterRoute = state.matchedLocation == '/register';
+      final isAuthRoute = isLoginRoute || isRegisterRoute;
+
+      if (!isLoggedIn && !isAuthRoute) {
         return '/login';
       }
 
-      if (isLoggedIn && isLoginRoute) {
+      if (isLoggedIn && isAuthRoute) {
         return '/';
       }
 
@@ -37,15 +64,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
   );
 });
-
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: Text('Login Screen')));
-  }
-}
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});

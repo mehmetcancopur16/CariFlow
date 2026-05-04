@@ -29,7 +29,7 @@ class DioClient {
         onRequest: (options, handler) async {
           final token = await _secureStorageService.readAccessToken();
           if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer ';
+            options.headers['Authorization'] = 'Bearer $token';
           }
           handler.next(options);
         },
@@ -69,7 +69,7 @@ class DioClient {
               return;
             }
 
-            options.headers['Authorization'] = 'Bearer ';
+            options.headers['Authorization'] = 'Bearer $newAccessToken';
             options.extra['retried'] = true;
 
             final retryResponse = await dio.fetch(options);
