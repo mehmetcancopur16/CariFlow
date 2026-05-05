@@ -2,10 +2,11 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../constants/api_constants.dart';
+import 'session_state_provider.dart';
 import 'secure_storage_service.dart';
 
 class DioClient {
-  DioClient(this._secureStorageService)
+  DioClient(this._secureStorageService, {required this.onSessionInvalidated})
     : dio = Dio(
         BaseOptions(
           baseUrl: ApiConstants.baseUrl,
@@ -20,6 +21,7 @@ class DioClient {
 
   final SecureStorageService _secureStorageService;
   final Dio dio;
+  final Future<void> Function() onSessionInvalidated;
 
   bool _isRefreshing = false;
 
@@ -58,6 +60,7 @@ class DioClient {
 
             if (!refreshed) {
               await _secureStorageService.clearTokens();
+              await onSessionInvalidated();
               handler.next(error);
               return;
             }
@@ -76,6 +79,7 @@ class DioClient {
             handler.resolve(retryResponse);
           } catch (_) {
             await _secureStorageService.clearTokens();
+            await onSessionInvalidated();
             handler.next(error);
           } finally {
             _isRefreshing = false;
@@ -117,7 +121,12 @@ class DioClient {
 }
 
 final dioClientProvider = Provider<DioClient>((ref) {
-  return DioClient(ref.read(secureStorageServiceProvider));
+  return DioClient(
+    ref.read(secureStorageServiceProvider),
+    onSessionInvalidated: () async {
+      ref.read(sessionVersionProvider.notifier).bump();
+    },
+  );
 });
 
 final dioProvider = Provider<Dio>((ref) {

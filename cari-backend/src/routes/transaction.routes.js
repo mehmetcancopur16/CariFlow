@@ -17,7 +17,7 @@ router.use(authMiddleware);
  *   get:
  *     tags: [Transactions]
  *     summary: Dashboard summary
- *     description: Totals for active clients — receivables (balance &gt; 0) and payables (balance &lt; 0, absolute sum).
+ *     description: Totals for active clients — receivables (balance &gt; 0) and debt/payables (balance &lt; 0, absolute sum).
  *     security: [{ bearerAuth: [] }]
  *     responses:
  *       200:
@@ -47,7 +47,7 @@ router.get('/dashboard/summary', getDashboardSummary);
  *   post:
  *     tags: [Transactions]
  *     summary: Create transaction
- *     description: Atomically updates client balance and records a debt or payment.
+ *     description: Atomically updates client balance and records a debt or payment. Debt increases receivable balance, payment decreases it.
  *     security: [{ bearerAuth: [] }]
  *     requestBody:
  *       required: true

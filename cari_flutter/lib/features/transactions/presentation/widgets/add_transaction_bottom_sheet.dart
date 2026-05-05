@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/network/api_error_mapper.dart';
 import '../../../clients/presentation/providers/clients_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../../data/transaction_repository.dart';
@@ -66,9 +67,13 @@ class _AddTransactionBottomSheetState
       context.pop();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Islem kaydedilemedi: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Islem kaydedilemedi: ${ApiErrorMapper.toMessage(error)}',
+          ),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => _saving = false);

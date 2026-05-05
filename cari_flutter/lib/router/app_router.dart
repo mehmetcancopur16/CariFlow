@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/network/secure_storage_service.dart';
+import '../core/network/session_state_provider.dart';
 import '../features/auth/presentation/providers/auth_provider.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/register_screen.dart';
@@ -11,6 +13,9 @@ import '../features/clients/presentation/screens/clients_list_screen.dart';
 class RouterRefreshNotifier extends ChangeNotifier {
   RouterRefreshNotifier(this.ref) {
     ref.listen<AsyncValue<AuthState>>(authNotifierProvider, (_, __) {
+      notifyListeners();
+    });
+    ref.listen<int>(sessionVersionProvider, (_, __) {
       notifyListeners();
     });
   }
@@ -49,10 +54,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const RegisterScreen(),
       ),
     ],
-    redirect: (context, state) {
+    redirect: (context, state) async {
       final auth = ref.read(authNotifierProvider);
       if (auth.isLoading) return null;
 
+      final token = await ref
+          .read(secureStorageServiceProvider)
+          .readAccessToken();
+      final hasToken = token != null && token.isNotEmpty;
       final isLoggedIn = auth.when(
         data: (state) => state.isAuthenticated,
         loading: () => false,
@@ -62,11 +71,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isRegisterRoute = state.matchedLocation == '/register';
       final isAuthRoute = isLoginRoute || isRegisterRoute;
 
-      if (!isLoggedIn && !isAuthRoute) {
+      if ((!hasToken || !isLoggedIn) && !isAuthRoute) {
         return '/login';
       }
 
-      if (isLoggedIn && isAuthRoute) {
+      if (hasToken && isLoggedIn && isAuthRoute) {
         return '/';
       }
 

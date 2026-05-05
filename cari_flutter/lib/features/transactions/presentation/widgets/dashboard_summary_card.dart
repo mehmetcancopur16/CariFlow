@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/network/api_error_mapper.dart';
 import '../providers/dashboard_provider.dart';
 
 class DashboardSummaryCard extends ConsumerWidget {
@@ -73,7 +74,7 @@ class DashboardSummaryCard extends ConsumerWidget {
             height: 72,
             child: Center(
               child: Text(
-                'Ozet yuklenemedi: $error',
+                'Ozet yuklenemedi: ${ApiErrorMapper.toMessage(error)}',
                 style: const TextStyle(color: AppColors.dangerColor),
                 textAlign: TextAlign.center,
               ),

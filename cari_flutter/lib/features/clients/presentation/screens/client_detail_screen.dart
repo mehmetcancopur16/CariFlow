@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/network/api_error_mapper.dart';
 import '../../../transactions/presentation/providers/transactions_provider.dart';
 import '../../../transactions/presentation/widgets/add_transaction_bottom_sheet.dart';
 import '../providers/clients_provider.dart';
@@ -110,7 +111,7 @@ class ClientDetailScreen extends ConsumerWidget {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
                   child: Text(
-                    'Islemler yuklenemedi: $error',
+                    'Islemler yuklenemedi: ${ApiErrorMapper.toMessage(error)}',
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -126,10 +127,10 @@ class ClientDetailScreen extends ConsumerWidget {
                     itemBuilder: (context, index) {
                       final tx = transactions[index];
                       final isDebt = tx.type == 'debt';
-                      final sign = isDebt ? '-' : '+';
+                      final sign = isDebt ? '+' : '-';
                       final color = isDebt
-                          ? AppColors.dangerColor
-                          : AppColors.successColor;
+                          ? AppColors.successColor
+                          : AppColors.dangerColor;
                       final dateText = DateFormat(
                         'dd.MM.yyyy HH:mm',
                       ).format(tx.date);
@@ -144,7 +145,7 @@ class ClientDetailScreen extends ConsumerWidget {
                           leading: CircleAvatar(
                             backgroundColor: color.withAlpha(20),
                             child: Icon(
-                              isDebt ? Icons.trending_down : Icons.trending_up,
+                              isDebt ? Icons.trending_up : Icons.trending_down,
                               color: color,
                             ),
                           ),

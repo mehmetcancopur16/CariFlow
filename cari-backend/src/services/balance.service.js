@@ -26,10 +26,13 @@ async function processTransaction(clientId, ownerId, type, amount, description) 
 
       const balanceBefore = client.currentBalance;
 
+      // Domain rule:
+      // - debt: client owes us more -> receivable increases
+      // - payment: client pays us -> receivable decreases
       if (type === 'debt') {
-        client.currentBalance -= amount;
-      } else if (type === 'payment') {
         client.currentBalance += amount;
+      } else if (type === 'payment') {
+        client.currentBalance -= amount;
       } else {
         throw new Error('Invalid transaction type');
       }

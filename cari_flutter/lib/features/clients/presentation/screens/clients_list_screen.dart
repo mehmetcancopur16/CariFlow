@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/network/api_error_mapper.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../transactions/presentation/providers/dashboard_provider.dart';
 import '../../../transactions/presentation/widgets/dashboard_summary_card.dart';
@@ -148,7 +149,7 @@ class ClientsListScreen extends ConsumerWidget {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Center(
                   child: Text(
-                    'Bir hata olustu: $error',
+                    ApiErrorMapper.toMessage(error),
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: AppColors.dangerColor),
                   ),

@@ -5,6 +5,8 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
+    "seed": "node scripts/seed.js",
+    "seed:reset": "node scripts/seed.js --reset",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

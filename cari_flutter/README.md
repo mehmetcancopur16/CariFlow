@@ -1,30 +1,46 @@
-# CariFlow - Cari Bakiye Takip Sistemi
+# CariFlow Mobile (Flutter)
 
-CariFlow, kucuk ve orta olcekli isletmeler icin cari takibi, bakiye yonetimi ve islem kayitlarini tek bir platformda sunan bir uygulamadir.
+Flutter istemcisi; auth, musteri listesi/detay, islem ekleme, dashboard ozeti ve temel cihaz guvenlik kontrolu (root/jailbreak) icerir.
 
-## Kurulum ve Calistirma
+## Kurulum
 
-### Backend (Node.js)
-1. Backend dizinine gir:
-   - `cd cari-backend`
-2. Bagimliliklari kur:
-   - `npm install`
-3. Ortam degiskenlerini ayarla (`.env`):
-   - `PORT=3000`
-   - `MONGO_URI=...`
-   - `JWT_SECRET=...`
-4. Gelistirme modunda calistir:
-   - `npm run dev`
+```bash
+flutter pub get
+```
 
-### Flutter (Mobil)
-1. Flutter dizinine gir:
-   - `cd cari_flutter`
-2. Bagimliliklari kur:
-   - `flutter pub get`
-3. Uygulamayi baslat:
-   - `flutter run`
+## Calistirma
+
+```bash
+flutter run
+```
+
+## Backend Baglantisi
+
+Varsayilan API base URL:
+
+- Android emulator: `http://10.0.2.2:3000/api`
+
+Gerekirse `lib/core/constants/api_constants.dart` icindeki `baseUrl` degerini ortama gore guncelleyin.
+
+## Temel Ozellikler
+
+- JWT auth (access + refresh)
+- Client listesi ve detay ekrani
+- Transaction gecmisi ve yeni islem ekleme
+- Dashboard summary karti
+- Root/Jailbreak tespiti ile guvenlik blok ekrani
+
+## Dogrulama Komutlari
+
+```bash
+flutter analyze
+flutter test
+```
 
 ## Guvenlik (Obfuscation)
-Market dagitimi oncesi tersine muhendislik riskini azaltmak icin APK'yi obfuscation ile alin:
 
-`flutter build apk --obfuscate --split-debug-info=build/app/outputs/symbols`
+Market dagitimi oncesi tersine muhendislik riskini azaltmak icin:
+
+```bash
+flutter build apk --obfuscate --split-debug-info=build/app/outputs/symbols
+```
