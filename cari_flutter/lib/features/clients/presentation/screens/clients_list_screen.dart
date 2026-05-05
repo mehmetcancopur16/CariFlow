@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../transactions/presentation/providers/dashboard_provider.dart';
+import '../../../transactions/presentation/widgets/dashboard_summary_card.dart';
 import '../../data/models/client_model.dart';
 import '../providers/clients_provider.dart';
 
@@ -113,6 +115,13 @@ class ClientsListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final clientsState = ref.watch(clientsNotifierProvider);
 
+    Future<void> onRefresh() async {
+      ref.invalidate(clientsNotifierProvider);
+      ref.invalidate(dashboardProvider);
+      await ref.read(clientsNotifierProvider.future);
+      await ref.read(dashboardProvider.future);
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('CariFlow'),
@@ -126,55 +135,75 @@ class ClientsListScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: clientsState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Text(
-            'Bir hata olustu: $error',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.dangerColor),
-          ),
-        ),
-        data: (clients) {
-          if (clients.isEmpty) {
-            return const Center(child: Text('Henuz musteri eklenmedi'));
-          }
-
-          return RefreshIndicator(
-            onRefresh: () =>
-                ref.read(clientsNotifierProvider.notifier).refreshClients(),
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 88),
-              itemCount: clients.length,
-              itemBuilder: (context, index) {
-                final client = clients[index];
-                return Card(
-                  child: ListTile(
-                    onTap: () => context.go('/client/${client.id}'),
-                    leading: CircleAvatar(
-                      backgroundColor: AppColors.primaryColor.withAlpha(30),
-                      child: Text(
-                        client.name.isNotEmpty
-                            ? client.name[0].toUpperCase()
-                            : '?',
-                        style: const TextStyle(color: AppColors.primaryColor),
-                      ),
-                    ),
-                    title: Text(client.name),
-                    subtitle: Text(_subtitle(client)),
-                    trailing: Text(
-                      _formatCurrency(client.currentBalance),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: _balanceColor(client.currentBalance),
-                      ),
-                    ),
-                  ),
-                );
-              },
+      body: RefreshIndicator(
+        onRefresh: onRefresh,
+        child: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(12, 12, 12, 6),
+              child: DashboardSummaryCard(),
             ),
-          );
-        },
+            Expanded(
+              child: clientsState.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, _) => Center(
+                  child: Text(
+                    'Bir hata olustu: $error',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: AppColors.dangerColor),
+                  ),
+                ),
+                data: (clients) {
+                  if (clients.isEmpty) {
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: const [
+                        SizedBox(height: 180),
+                        Center(child: Text('Henuz musteri eklenmedi')),
+                      ],
+                    );
+                  }
+
+                  return ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 88),
+                    itemCount: clients.length,
+                    itemBuilder: (context, index) {
+                      final client = clients[index];
+                      return Card(
+                        child: ListTile(
+                          onTap: () => context.go('/client/${client.id}'),
+                          leading: CircleAvatar(
+                            backgroundColor: AppColors.primaryColor.withAlpha(
+                              30,
+                            ),
+                            child: Text(
+                              client.name.isNotEmpty
+                                  ? client.name[0].toUpperCase()
+                                  : '?',
+                              style: const TextStyle(
+                                color: AppColors.primaryColor,
+                              ),
+                            ),
+                          ),
+                          title: Text(client.name),
+                          subtitle: Text(_subtitle(client)),
+                          trailing: Text(
+                            _formatCurrency(client.currentBalance),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: _balanceColor(client.currentBalance),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddClientDialog(context, ref),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../clients/presentation/providers/clients_provider.dart';
+import '../providers/dashboard_provider.dart';
 import '../../data/transaction_repository.dart';
 import '../providers/transactions_provider.dart';
 
@@ -61,6 +62,7 @@ class _AddTransactionBottomSheetState
       if (!mounted) return;
       ref.invalidate(transactionsProvider(widget.clientId));
       ref.invalidate(clientsNotifierProvider);
+      ref.invalidate(dashboardProvider);
       context.pop();
     } catch (error) {
       if (!mounted) return;
