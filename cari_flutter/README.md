@@ -1,16 +1,30 @@
-# cari_flutter
+# CariFlow - Cari Bakiye Takip Sistemi
 
-A new Flutter project.
+CariFlow, kucuk ve orta olcekli isletmeler icin cari takibi, bakiye yonetimi ve islem kayitlarini tek bir platformda sunan bir uygulamadir.
 
-## Getting Started
+## Kurulum ve Calistirma
 
-This project is a starting point for a Flutter application.
+### Backend (Node.js)
+1. Backend dizinine gir:
+   - `cd cari-backend`
+2. Bagimliliklari kur:
+   - `npm install`
+3. Ortam degiskenlerini ayarla (`.env`):
+   - `PORT=3000`
+   - `MONGO_URI=...`
+   - `JWT_SECRET=...`
+4. Gelistirme modunda calistir:
+   - `npm run dev`
 
-A few resources to get you started if this is your first Flutter project:
+### Flutter (Mobil)
+1. Flutter dizinine gir:
+   - `cd cari_flutter`
+2. Bagimliliklari kur:
+   - `flutter pub get`
+3. Uygulamayi baslat:
+   - `flutter run`
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Guvenlik (Obfuscation)
+Market dagitimi oncesi tersine muhendislik riskini azaltmak icin APK'yi obfuscation ile alin:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+`flutter build apk --obfuscate --split-debug-info=build/app/outputs/symbols`
