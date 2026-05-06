@@ -50,6 +50,27 @@ class ClientRepository {
 
     return ClientModel.fromJson(data['data'] as Map<String, dynamic>);
   }
+
+  Future<ClientModel> updateClient(
+    String id,
+    Map<String, dynamic> payload,
+  ) async {
+    final response = await _dio.put<Map<String, dynamic>>(
+      '${ApiConstants.clients}/$id',
+      data: payload,
+    );
+
+    final data = response.data;
+    if (data == null || data['data'] is! Map<String, dynamic>) {
+      throw Exception('Invalid update client response');
+    }
+
+    return ClientModel.fromJson(data['data'] as Map<String, dynamic>);
+  }
+
+  Future<void> deleteClient(String id) async {
+    await _dio.delete<Map<String, dynamic>>('${ApiConstants.clients}/$id');
+  }
 }
 
 final clientRepositoryProvider = Provider<ClientRepository>((ref) {

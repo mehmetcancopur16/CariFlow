@@ -1,5 +1,9 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:io';
 
 import '../constants/api_constants.dart';
 import 'session_state_provider.dart';
@@ -25,7 +29,39 @@ class DioClient {
 
   bool _isRefreshing = false;
 
+  void configureCertificatePinning() {
+    // NOTE: Replace with your real production certificate SHA-256 fingerprints.
+    const pinnedSha256Fingerprints = <String>[
+      'SHA256 fingerprint of your server certificate',
+    ];
+
+    final adapter = IOHttpClientAdapter(
+      createHttpClient: () {
+        final client = HttpClient();
+        client.badCertificateCallback =
+            (X509Certificate cert, String host, int port) {
+              // Development convenience for local non-production endpoints.
+              if (host == '10.0.2.2' || host == 'localhost') {
+                return true;
+              }
+
+              final certSha256 = sha256
+                  .convert(utf8.encode(cert.pem))
+                  .toString()
+                  .toUpperCase();
+              return pinnedSha256Fingerprints.any(
+                (fp) => fp.trim().toUpperCase() == certSha256,
+              );
+            };
+        return client;
+      },
+    );
+
+    dio.httpClientAdapter = adapter;
+  }
+
   void _attachInterceptors() {
+    configureCertificatePinning();
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {

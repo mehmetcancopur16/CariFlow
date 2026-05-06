@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/network/api_error_mapper.dart';
+import '../../../transactions/presentation/providers/dashboard_provider.dart';
 import '../../../transactions/presentation/providers/transactions_provider.dart';
 import '../../../transactions/presentation/widgets/add_transaction_bottom_sheet.dart';
+import '../../data/client_repository.dart';
+import '../../data/models/client_model.dart';
 import '../providers/clients_provider.dart';
+import '../widgets/edit_client_bottom_sheet.dart';
 
 class ClientDetailScreen extends ConsumerWidget {
   const ClientDetailScreen({required this.id, super.key});
@@ -36,6 +41,62 @@ class ClientDetailScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _showEditClientSheet(
+    BuildContext context,
+    ClientModel client,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => EditClientBottomSheet(client: client),
+    );
+  }
+
+  Future<void> _confirmAndDelete(
+    BuildContext context,
+    WidgetRef ref,
+    ClientModel client,
+  ) async {
+    final approved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Musteri Sil'),
+        content: const Text('Bu musteriyi silmek istediginize emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Iptal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.dangerColor,
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+
+    if (approved != true) return;
+
+    try {
+      await ref.read(clientRepositoryProvider).deleteClient(client.id);
+      ref.invalidate(clientsNotifierProvider);
+      ref.invalidate(dashboardProvider);
+      ref.invalidate(transactionsProvider(id));
+
+      if (!context.mounted) return;
+      context.pop();
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(ApiErrorMapper.toMessage(error))));
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final clientsState = ref.watch(clientsNotifierProvider);
@@ -62,7 +123,31 @@ class ClientDetailScreen extends ConsumerWidget {
         );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Musteri Detayi')),
+      appBar: AppBar(
+        title: const Text('Musteri Detayi'),
+        actions: [
+          if (selectedClient != null)
+            PopupMenuButton<String>(
+              onSelected: (value) async {
+                if (value == 'edit') {
+                  await _showEditClientSheet(context, selectedClient);
+                } else if (value == 'delete') {
+                  await _confirmAndDelete(context, ref, selectedClient);
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem<String>(value: 'edit', child: Text('Duzenle')),
+                PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Text(
+                    'Sil',
+                    style: TextStyle(color: AppColors.dangerColor),
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
