@@ -11,8 +11,35 @@ import '../../../transactions/presentation/widgets/dashboard_summary_card.dart';
 import '../../data/models/client_model.dart';
 import '../providers/clients_provider.dart';
 
-class ClientsListScreen extends ConsumerWidget {
+enum _BalanceFilter { all, receivable, debt }
+
+class ClientsListScreen extends ConsumerStatefulWidget {
   const ClientsListScreen({super.key});
+
+  @override
+  ConsumerState<ClientsListScreen> createState() => _ClientsListScreenState();
+}
+
+class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  _BalanceFilter _selectedFilter = _BalanceFilter.all;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.trim().toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   Future<void> _showAddClientDialog(BuildContext context, WidgetRef ref) async {
     final formKey = GlobalKey<FormState>();
@@ -23,7 +50,19 @@ class ClientsListScreen extends ConsumerWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Yeni Musteri Ekle'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Row(
+            children: [
+              Icon(
+                Icons.person_add_alt_1_rounded,
+                color: AppColors.primaryColor,
+              ),
+              SizedBox(width: 8),
+              Text('Yeni Musteri Ekle'),
+            ],
+          ),
           content: Form(
             key: formKey,
             child: Column(
@@ -34,6 +73,7 @@ class ClientsListScreen extends ConsumerWidget {
                   decoration: const InputDecoration(
                     labelText: 'Ad',
                     border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.badge_rounded),
                   ),
                   validator: (value) {
                     if ((value ?? '').trim().isEmpty) {
@@ -49,6 +89,7 @@ class ClientsListScreen extends ConsumerWidget {
                   decoration: const InputDecoration(
                     labelText: 'Telefon',
                     border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.phone_android_rounded),
                   ),
                 ),
               ],
@@ -59,7 +100,7 @@ class ClientsListScreen extends ConsumerWidget {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Iptal'),
             ),
-            FilledButton(
+            FilledButton.icon(
               onPressed: () async {
                 if (!formKey.currentState!.validate()) return;
 
@@ -79,7 +120,8 @@ class ClientsListScreen extends ConsumerWidget {
                   Navigator.of(context).pop();
                 }
               },
-              child: const Text('Kaydet'),
+              icon: const Icon(Icons.check_rounded),
+              label: const Text('Kaydet'),
             ),
           ],
         );
@@ -112,9 +154,36 @@ class ClientsListScreen extends ConsumerWidget {
     return 'Iletisim bilgisi yok';
   }
 
+  List<ClientModel> _applyFilters(List<ClientModel> clients) {
+    var filtered = clients;
+
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered.where((client) {
+        final name = client.name.toLowerCase();
+        final phone = (client.phone ?? '').toLowerCase();
+        final email = (client.email ?? '').toLowerCase();
+        return name.contains(_searchQuery) ||
+            phone.contains(_searchQuery) ||
+            email.contains(_searchQuery);
+      }).toList();
+    }
+
+    switch (_selectedFilter) {
+      case _BalanceFilter.receivable:
+        filtered = filtered.where((c) => c.currentBalance > 0).toList();
+      case _BalanceFilter.debt:
+        filtered = filtered.where((c) => c.currentBalance < 0).toList();
+      case _BalanceFilter.all:
+        break;
+    }
+
+    return filtered;
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final clientsState = ref.watch(clientsNotifierProvider);
+    final theme = Theme.of(context);
 
     Future<void> onRefresh() async {
       ref.invalidate(clientsNotifierProvider);
@@ -124,92 +193,353 @@ class ClientsListScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('CariFlow'),
-        actions: [
-          IconButton(
-            tooltip: 'Cikis Yap',
-            onPressed: () async {
-              await ref.read(authNotifierProvider.notifier).logout();
-            },
-            icon: const Icon(Icons.logout_rounded),
-          ),
-        ],
-      ),
       body: RefreshIndicator(
         onRefresh: onRefresh,
-        child: Column(
-          children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(12, 12, 12, 6),
-              child: DashboardSummaryCard(),
-            ),
-            Expanded(
-              child: clientsState.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, _) => Center(
-                  child: Text(
-                    ApiErrorMapper.toMessage(error),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.dangerColor),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              floating: true,
+              expandedHeight: 130,
+              backgroundColor: Colors.white,
+              elevation: 0,
+              surfaceTintColor: Colors.transparent,
+              title: const Text('CariFlow Dashboard'),
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.primaryColor.withAlpha(24),
+                        Colors.white,
+                        AppColors.successColor.withAlpha(20),
+                      ],
+                    ),
                   ),
                 ),
-                data: (clients) {
-                  if (clients.isEmpty) {
-                    return ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: const [
-                        SizedBox(height: 180),
-                        Center(child: Text('Henuz musteri eklenmedi')),
-                      ],
-                    );
-                  }
-
-                  return ListView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 88),
-                    itemCount: clients.length,
-                    itemBuilder: (context, index) {
-                      final client = clients[index];
-                      return Card(
-                        child: ListTile(
-                          onTap: () => context.go('/client/${client.id}'),
-                          leading: CircleAvatar(
-                            backgroundColor: AppColors.primaryColor.withAlpha(
-                              30,
-                            ),
-                            child: Text(
-                              client.name.isNotEmpty
-                                  ? client.name[0].toUpperCase()
-                                  : '?',
-                              style: const TextStyle(
-                                color: AppColors.primaryColor,
-                              ),
-                            ),
+              ),
+              actions: [
+                IconButton(
+                  tooltip: 'Yenile',
+                  onPressed: onRefresh,
+                  icon: const Icon(Icons.refresh_rounded),
+                ),
+                IconButton(
+                  tooltip: 'Cikis Yap',
+                  onPressed: () async {
+                    await ref.read(authNotifierProvider.notifier).logout();
+                  },
+                  icon: const Icon(Icons.logout_rounded),
+                ),
+              ],
+            ),
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(12, 12, 12, 6),
+                child: DashboardSummaryCard(),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Musteri ara (ad, telefon, email)',
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    suffixIcon: _searchQuery.isEmpty
+                        ? null
+                        : IconButton(
+                            onPressed: () => _searchController.clear(),
+                            icon: const Icon(Icons.close_rounded),
                           ),
-                          title: Text(client.name),
-                          subtitle: Text(_subtitle(client)),
-                          trailing: Text(
-                            _formatCurrency(client.currentBalance),
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: _balanceColor(client.currentBalance),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                child: SegmentedButton<_BalanceFilter>(
+                  showSelectedIcon: false,
+                  segments: const [
+                    ButtonSegment<_BalanceFilter>(
+                      value: _BalanceFilter.all,
+                      icon: Icon(Icons.all_inbox_rounded),
+                      label: Text('Tumu'),
+                    ),
+                    ButtonSegment<_BalanceFilter>(
+                      value: _BalanceFilter.receivable,
+                      icon: Icon(Icons.trending_up_rounded),
+                      label: Text('Alacak'),
+                    ),
+                    ButtonSegment<_BalanceFilter>(
+                      value: _BalanceFilter.debt,
+                      icon: Icon(Icons.trending_down_rounded),
+                      label: Text('Borc'),
+                    ),
+                  ],
+                  selected: {_selectedFilter},
+                  onSelectionChanged: (next) {
+                    setState(() {
+                      _selectedFilter = next.first;
+                    });
+                  },
+                ),
+              ),
+            ),
+            clientsState.when(
+              loading: () => const SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (error, _) => SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: AppColors.dangerColor,
+                          size: 36,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          ApiErrorMapper.toMessage(error),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: AppColors.dangerColor),
+                        ),
+                        const SizedBox(height: 12),
+                        FilledButton.icon(
+                          onPressed: onRefresh,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('Tekrar Dene'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              data: (clients) {
+                final filteredClients = _applyFilters(clients);
+
+                if (filteredClients.isEmpty) {
+                  final hasSearchOrFilter =
+                      _searchQuery.isNotEmpty ||
+                      _selectedFilter != _BalanceFilter.all;
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              hasSearchOrFilter
+                                  ? Icons.filter_alt_off_rounded
+                                  : Icons.groups_rounded,
+                              color: AppColors.textColor.withAlpha(140),
+                              size: 42,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              hasSearchOrFilter
+                                  ? 'Arama veya filtreye uygun musteri bulunamadi'
+                                  : 'Henuz musteri eklenmedi',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 10),
+                            if (hasSearchOrFilter)
+                              OutlinedButton.icon(
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() {
+                                    _selectedFilter = _BalanceFilter.all;
+                                  });
+                                },
+                                icon: const Icon(
+                                  Icons.cleaning_services_rounded,
+                                ),
+                                label: const Text('Filtreleri Temizle'),
+                              )
+                            else
+                              FilledButton.icon(
+                                onPressed: () =>
+                                    _showAddClientDialog(context, ref),
+                                icon: const Icon(
+                                  Icons.person_add_alt_1_rounded,
+                                ),
+                                label: const Text('Ilk Musteriyi Ekle'),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                return SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 110),
+                  sliver: SliverList.builder(
+                    itemCount: filteredClients.length,
+                    itemBuilder: (context, index) {
+                      final client = filteredClients[index];
+                      return TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: 0, end: 1),
+                        duration: Duration(milliseconds: 180 + (index * 35)),
+                        curve: Curves.easeOut,
+                        builder: (context, value, child) {
+                          return Opacity(
+                            opacity: value,
+                            child: Transform.translate(
+                              offset: Offset(0, (1 - value) * 10),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: Card(
+                          elevation: 0.6,
+                          margin: const EdgeInsets.only(bottom: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () => context.go('/client/${client.id}'),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 24,
+                                    backgroundColor: AppColors.primaryColor
+                                        .withAlpha(28),
+                                    child: Text(
+                                      client.name.isNotEmpty
+                                          ? client.name[0].toUpperCase()
+                                          : '?',
+                                      style: const TextStyle(
+                                        color: AppColors.primaryColor,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                client.name,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: client.isActive
+                                                    ? AppColors.successColor
+                                                          .withAlpha(20)
+                                                    : AppColors.dangerColor
+                                                          .withAlpha(20),
+                                                borderRadius:
+                                                    BorderRadius.circular(99),
+                                              ),
+                                              child: Text(
+                                                client.isActive
+                                                    ? 'Aktif'
+                                                    : 'Pasif',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: client.isActive
+                                                      ? AppColors.successColor
+                                                      : AppColors.dangerColor,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          _subtitle(client),
+                                          style: TextStyle(
+                                            color: AppColors.textColor
+                                                .withAlpha(150),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        _formatCurrency(client.currentBalance),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          color: _balanceColor(
+                                            client.currentBalance,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Icon(
+                                        Icons.chevron_right_rounded,
+                                        color: AppColors.textColor.withAlpha(
+                                          100,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       );
                     },
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddClientDialog(context, ref),
         backgroundColor: AppColors.primaryColor,
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.person_add_alt_1_rounded),
+        label: const Text('Musteri Ekle'),
       ),
     );
   }
