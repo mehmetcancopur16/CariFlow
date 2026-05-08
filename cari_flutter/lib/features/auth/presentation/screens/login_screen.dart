@@ -17,6 +17,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -51,108 +52,202 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final isLoading = authState.isLoading;
+    final theme = Theme.of(context);
 
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Card(
-                elevation: 0,
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: BorderSide(color: AppColors.primaryColor.withAlpha(35)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'CariFlow',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Hesabina giris yaparak devam et',
-                          style: TextStyle(
-                            color: AppColors.textColor.withAlpha(170),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
-                            labelText: 'E-posta',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            final email = value?.trim() ?? '';
-                            if (email.isEmpty) return 'E-posta bos olamaz';
-                            final emailRegex = RegExp(
-                              r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-                            );
-                            if (!emailRegex.hasMatch(email)) {
-                              return 'Gecerli bir e-posta girin';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Sifre',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if ((value ?? '').trim().isEmpty) {
-                              return 'Sifre bos olamaz';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton(
-                            onPressed: isLoading ? null : _submit,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.primaryColor,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                            child: isLoading
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text('Giris Yap'),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Center(
-                          child: TextButton(
-                            onPressed: () => context.go('/register'),
-                            child: const Text('Hesabin yok mu? Kayit Ol'),
-                          ),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.primaryColor.withAlpha(28),
+                Colors.white,
+                AppColors.successColor.withAlpha(20),
+              ],
+            ),
+          ),
+          child: Center(
+            child: TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.92, end: 1),
+              duration: const Duration(milliseconds: 550),
+              curve: Curves.easeOutCubic,
+              builder: (context, scale, child) {
+                return Transform.scale(scale: scale, child: child);
+              },
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlpha(242),
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(
+                        color: AppColors.primaryColor.withAlpha(35),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryColor.withAlpha(20),
+                          blurRadius: 28,
+                          offset: const Offset(0, 16),
                         ),
                       ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(28),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryColor.withAlpha(28),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: const Icon(
+                                    Icons.lock_open_rounded,
+                                    color: AppColors.primaryColor,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                const Text(
+                                  'CariFlow',
+                                  style: TextStyle(
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.textColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Hesabina giris yaparak devam et',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textColor.withAlpha(170),
+                              ),
+                            ),
+                            const SizedBox(height: 26),
+                            TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: InputDecoration(
+                                labelText: 'E-posta',
+                                border: const OutlineInputBorder(),
+                                prefixIcon: const Icon(
+                                  Icons.mail_outline_rounded,
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              validator: (value) {
+                                final email = value?.trim() ?? '';
+                                if (email.isEmpty) return 'E-posta bos olamaz';
+                                final emailRegex = RegExp(
+                                  r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                                );
+                                if (!emailRegex.hasMatch(email)) {
+                                  return 'Gecerli bir e-posta girin';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: _obscurePassword,
+                              decoration: InputDecoration(
+                                labelText: 'Sifre',
+                                border: const OutlineInputBorder(),
+                                prefixIcon: const Icon(Icons.key_rounded),
+                                suffixIcon: IconButton(
+                                  tooltip: _obscurePassword
+                                      ? 'Sifreyi goster'
+                                      : 'Sifreyi gizle',
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                  ),
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              validator: (value) {
+                                if ((value ?? '').trim().isEmpty) {
+                                  return 'Sifre bos olamaz';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 22),
+                            SizedBox(
+                              width: double.infinity,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 220),
+                                curve: Curves.easeOut,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: isLoading
+                                      ? const []
+                                      : [
+                                          BoxShadow(
+                                            color: AppColors.primaryColor
+                                                .withAlpha(70),
+                                            blurRadius: 14,
+                                            offset: const Offset(0, 7),
+                                          ),
+                                        ],
+                                ),
+                                child: FilledButton(
+                                  onPressed: isLoading ? null : _submit,
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: AppColors.primaryColor,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                  child: isLoading
+                                      ? const SizedBox(
+                                          width: 22,
+                                          height: 22,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : const Text('Giris Yap'),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Center(
+                              child: TextButton.icon(
+                                onPressed: () => context.go('/register'),
+                                icon: const Icon(
+                                  Icons.person_add_alt_1_rounded,
+                                ),
+                                label: const Text('Hesabin yok mu? Kayit Ol'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
