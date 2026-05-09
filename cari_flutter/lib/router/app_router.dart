@@ -6,9 +6,14 @@ import '../core/network/secure_storage_service.dart';
 import '../core/network/session_state_provider.dart';
 import '../features/auth/presentation/providers/auth_provider.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
+import '../features/auth/presentation/screens/profile_screen.dart';
 import '../features/auth/presentation/screens/register_screen.dart';
+import '../features/clients/presentation/screens/add_client_screen.dart';
 import '../features/clients/presentation/screens/client_detail_screen.dart';
 import '../features/clients/presentation/screens/clients_list_screen.dart';
+import '../features/settings/presentation/screens/settings_screen.dart';
+import '../features/transactions/presentation/screens/quick_transaction_screen.dart';
+import '../shell/app_shell.dart';
 
 class RouterRefreshNotifier extends ChangeNotifier {
   RouterRefreshNotifier(this.ref) {
@@ -30,18 +35,45 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     refreshListenable: refreshNotifier,
     routes: [
-      GoRoute(
-        path: '/',
-        name: 'home',
-        builder: (context, state) => const ClientsListScreen(),
-      ),
-      GoRoute(
-        path: '/client/:id',
-        name: 'client-detail',
-        builder: (context, state) {
-          final id = state.pathParameters['id'] ?? '';
-          return ClientDetailScreen(id: id);
+      ShellRoute(
+        builder: (context, state, child) {
+          return AppShell(location: state.matchedLocation, child: child);
         },
+        routes: [
+          GoRoute(
+            path: '/',
+            name: 'home',
+            builder: (context, state) => const ClientsListScreen(),
+          ),
+          GoRoute(
+            path: '/clients/new',
+            name: 'add-client',
+            builder: (context, state) => const AddClientScreen(),
+          ),
+          GoRoute(
+            path: '/transaction/new',
+            name: 'quick-transaction',
+            builder: (context, state) => const QuickTransactionScreen(),
+          ),
+          GoRoute(
+            path: '/profile',
+            name: 'profile',
+            builder: (context, state) => const ProfileScreen(),
+          ),
+          GoRoute(
+            path: '/settings',
+            name: 'settings',
+            builder: (context, state) => const SettingsScreen(),
+          ),
+          GoRoute(
+            path: '/client/:id',
+            name: 'client-detail',
+            builder: (context, state) {
+              final id = state.pathParameters['id'] ?? '';
+              return ClientDetailScreen(id: id);
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: '/login',

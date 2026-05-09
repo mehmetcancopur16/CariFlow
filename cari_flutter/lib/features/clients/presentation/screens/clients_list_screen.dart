@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/network/api_error_mapper.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../transactions/presentation/providers/dashboard_provider.dart';
 import '../../../transactions/presentation/widgets/dashboard_summary_card.dart';
 import '../../data/models/client_model.dart';
@@ -39,94 +38,6 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  Future<void> _showAddClientDialog(BuildContext context, WidgetRef ref) async {
-    final formKey = GlobalKey<FormState>();
-    final nameController = TextEditingController();
-    final phoneController = TextEditingController();
-
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Row(
-            children: [
-              Icon(
-                Icons.person_add_alt_1_rounded,
-                color: AppColors.primaryColor,
-              ),
-              SizedBox(width: 8),
-              Text('Yeni Musteri Ekle'),
-            ],
-          ),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Ad',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.badge_rounded),
-                  ),
-                  validator: (value) {
-                    if ((value ?? '').trim().isEmpty) {
-                      return 'Ad alani bos olamaz';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'Telefon',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.phone_android_rounded),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Iptal'),
-            ),
-            FilledButton.icon(
-              onPressed: () async {
-                if (!formKey.currentState!.validate()) return;
-
-                final payload = <String, dynamic>{
-                  'name': nameController.text.trim(),
-                };
-                final phone = phoneController.text.trim();
-                if (phone.isNotEmpty) {
-                  payload['phone'] = phone;
-                }
-
-                await ref
-                    .read(clientsNotifierProvider.notifier)
-                    .addClient(payload);
-
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
-              },
-              icon: const Icon(Icons.check_rounded),
-              label: const Text('Kaydet'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   String _formatCurrency(double amount) {
@@ -226,13 +137,6 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                   tooltip: 'Yenile',
                   onPressed: onRefresh,
                   icon: const Icon(Icons.refresh_rounded),
-                ),
-                IconButton(
-                  tooltip: 'Cikis Yap',
-                  onPressed: () async {
-                    await ref.read(authNotifierProvider.notifier).logout();
-                  },
-                  icon: const Icon(Icons.logout_rounded),
                 ),
               ],
             ),
@@ -377,8 +281,7 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                               )
                             else
                               FilledButton.icon(
-                                onPressed: () =>
-                                    _showAddClientDialog(context, ref),
+                                onPressed: () => context.go('/clients/new'),
                                 icon: const Icon(
                                   Icons.person_add_alt_1_rounded,
                                 ),
@@ -536,7 +439,7 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddClientDialog(context, ref),
+        onPressed: () => context.go('/clients/new'),
         backgroundColor: AppColors.primaryColor,
         icon: const Icon(Icons.person_add_alt_1_rounded),
         label: const Text('Musteri Ekle'),

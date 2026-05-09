@@ -88,7 +88,7 @@ class ClientDetailScreen extends ConsumerWidget {
       ref.invalidate(transactionsProvider(id));
 
       if (!context.mounted) return;
-      context.pop();
+      context.go('/');
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(
@@ -125,6 +125,11 @@ class ClientDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Musteri Detayi'),
+        leading: IconButton(
+          tooltip: 'Geri',
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => context.go('/'),
+        ),
         actions: [
           if (selectedClient != null)
             PopupMenuButton<String>(
