@@ -14,6 +14,7 @@ class AppShell extends ConsumerWidget {
 
   static const _paths = <String>[
     '/',
+    '/clients',
     '/clients/new',
     '/transaction/new',
     '/profile',
@@ -21,7 +22,7 @@ class AppShell extends ConsumerWidget {
   ];
 
   static int selectedIndexForLocation(String loc) {
-    if (loc.startsWith('/client/')) return 0;
+    if (loc.startsWith('/client/')) return 1;
     final idx = _paths.indexOf(loc);
     return idx >= 0 ? idx : 0;
   }
@@ -37,7 +38,7 @@ class AppShell extends ConsumerWidget {
     final selectedIndex = selectedIndexForLocation(location);
     final width = MediaQuery.sizeOf(context).width;
     final useRail = width >= 900;
-    final extendedRail = width >= 1200;
+    final extendedRail = width >= 1280;
 
     Future<void> logout() async {
       await ref.read(authNotifierProvider.notifier).logout();
@@ -50,9 +51,14 @@ class AppShell extends ConsumerWidget {
         label: Text('Dashboard'),
       ),
       const NavigationRailDestination(
+        icon: Icon(Icons.groups_outlined),
+        selectedIcon: Icon(Icons.groups_rounded),
+        label: Text('Musteriler'),
+      ),
+      const NavigationRailDestination(
         icon: Icon(Icons.person_add_alt_outlined),
         selectedIcon: Icon(Icons.person_add_alt_1_rounded),
-        label: Text('Musteri'),
+        label: Text('Yeni'),
       ),
       const NavigationRailDestination(
         icon: Icon(Icons.payments_outlined),
@@ -78,9 +84,14 @@ class AppShell extends ConsumerWidget {
         label: 'Ana',
       ),
       const NavigationDestination(
+        icon: Icon(Icons.groups_outlined),
+        selectedIcon: Icon(Icons.groups_rounded),
+        label: 'Liste',
+      ),
+      const NavigationDestination(
         icon: Icon(Icons.person_add_alt_outlined),
         selectedIcon: Icon(Icons.person_add_alt_1_rounded),
-        label: 'Musteri',
+        label: 'Ekle',
       ),
       const NavigationDestination(
         icon: Icon(Icons.payments_outlined),
@@ -95,7 +106,7 @@ class AppShell extends ConsumerWidget {
       const NavigationDestination(
         icon: Icon(Icons.settings_outlined),
         selectedIcon: Icon(Icons.settings_rounded),
-        label: 'Ayarlar',
+        label: 'Ayar',
       ),
     ];
 
@@ -171,7 +182,7 @@ class AppShell extends ConsumerWidget {
             AnimatedContainer(
               duration: const Duration(milliseconds: 280),
               curve: Curves.easeOutCubic,
-              width: extendedRail ? 260 : 88,
+              width: extendedRail ? 268 : 88,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,

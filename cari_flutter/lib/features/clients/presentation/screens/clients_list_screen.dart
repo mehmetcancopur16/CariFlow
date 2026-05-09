@@ -10,7 +10,9 @@ import '../../../transactions/presentation/widgets/dashboard_summary_card.dart';
 import '../../data/models/client_model.dart';
 import '../providers/clients_provider.dart';
 
-enum _BalanceFilter { all, receivable, debt }
+enum _BalanceFilter { all, receivable, debt, zero }
+
+enum _SortMode { nameAsc, nameDesc, balanceHigh, balanceLow }
 
 class ClientsListScreen extends ConsumerStatefulWidget {
   const ClientsListScreen({super.key});
@@ -23,6 +25,7 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   _BalanceFilter _selectedFilter = _BalanceFilter.all;
+  _SortMode _sortMode = _SortMode.nameAsc;
 
   @override
   void initState() {
@@ -65,7 +68,7 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
     return 'Iletisim bilgisi yok';
   }
 
-  List<ClientModel> _applyFilters(List<ClientModel> clients) {
+  List<ClientModel> _applyFiltersAndSort(List<ClientModel> clients) {
     var filtered = clients;
 
     if (_searchQuery.isNotEmpty) {
@@ -73,9 +76,13 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
         final name = client.name.toLowerCase();
         final phone = (client.phone ?? '').toLowerCase();
         final email = (client.email ?? '').toLowerCase();
+        final address = (client.address ?? '').toLowerCase();
+        final notes = (client.notes ?? '').toLowerCase();
         return name.contains(_searchQuery) ||
             phone.contains(_searchQuery) ||
-            email.contains(_searchQuery);
+            email.contains(_searchQuery) ||
+            address.contains(_searchQuery) ||
+            notes.contains(_searchQuery);
       }).toList();
     }
 
@@ -84,11 +91,41 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
         filtered = filtered.where((c) => c.currentBalance > 0).toList();
       case _BalanceFilter.debt:
         filtered = filtered.where((c) => c.currentBalance < 0).toList();
+      case _BalanceFilter.zero:
+        filtered = filtered.where((c) => c.currentBalance == 0).toList();
       case _BalanceFilter.all:
         break;
     }
 
-    return filtered;
+    final sorted = List<ClientModel>.from(filtered);
+    switch (_sortMode) {
+      case _SortMode.nameAsc:
+        sorted.sort(
+          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        );
+      case _SortMode.nameDesc:
+        sorted.sort(
+          (a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()),
+        );
+      case _SortMode.balanceHigh:
+        sorted.sort((a, b) => b.currentBalance.compareTo(a.currentBalance));
+      case _SortMode.balanceLow:
+        sorted.sort((a, b) => a.currentBalance.compareTo(b.currentBalance));
+    }
+    return sorted;
+  }
+
+  bool get _hasActiveFilters =>
+      _searchQuery.isNotEmpty ||
+      _selectedFilter != _BalanceFilter.all ||
+      _sortMode != _SortMode.nameAsc;
+
+  void _resetFilters() {
+    _searchController.clear();
+    setState(() {
+      _selectedFilter = _BalanceFilter.all;
+      _sortMode = _SortMode.nameAsc;
+    });
   }
 
   @override
@@ -134,6 +171,11 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
               ),
               actions: [
                 IconButton(
+                  tooltip: 'Kayitli musteriler',
+                  onPressed: () => context.go('/clients'),
+                  icon: const Icon(Icons.groups_rounded),
+                ),
+                IconButton(
                   tooltip: 'Yenile',
                   onPressed: onRefresh,
                   icon: const Icon(Icons.refresh_rounded),
@@ -152,7 +194,7 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Musteri ara (ad, telefon, email)',
+                    hintText: 'Ara: ad, telefon, e-posta, adres, not...',
                     prefixIcon: const Icon(Icons.search_rounded),
                     suffixIcon: _searchQuery.isEmpty
                         ? null
@@ -172,31 +214,136 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-                child: SegmentedButton<_BalanceFilter>(
-                  showSelectedIcon: false,
-                  segments: const [
-                    ButtonSegment<_BalanceFilter>(
-                      value: _BalanceFilter.all,
-                      icon: Icon(Icons.all_inbox_rounded),
-                      label: Text('Tumu'),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white,
+                        AppColors.primaryColor.withAlpha(14),
+                      ],
                     ),
-                    ButtonSegment<_BalanceFilter>(
-                      value: _BalanceFilter.receivable,
-                      icon: Icon(Icons.trending_up_rounded),
-                      label: Text('Alacak'),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: AppColors.primaryColor.withAlpha(30),
                     ),
-                    ButtonSegment<_BalanceFilter>(
-                      value: _BalanceFilter.debt,
-                      icon: Icon(Icons.trending_down_rounded),
-                      label: Text('Borc'),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.filter_list_rounded,
+                              size: 22,
+                              color: AppColors.primaryColor.withAlpha(220),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Gelismis filtreleme',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const Spacer(),
+                            if (_hasActiveFilters)
+                              TextButton.icon(
+                                onPressed: _resetFilters,
+                                icon: const Icon(Icons.restart_alt_rounded),
+                                label: const Text('Sifirla'),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _DashFilterChip(
+                                label: 'Tumu',
+                                icon: Icons.all_inbox_rounded,
+                                selected: _selectedFilter == _BalanceFilter.all,
+                                onTap: () => setState(
+                                  () => _selectedFilter = _BalanceFilter.all,
+                                ),
+                              ),
+                              _DashFilterChip(
+                                label: 'Alacak',
+                                icon: Icons.trending_up_rounded,
+                                selected:
+                                    _selectedFilter ==
+                                    _BalanceFilter.receivable,
+                                onTap: () => setState(
+                                  () => _selectedFilter =
+                                      _BalanceFilter.receivable,
+                                ),
+                              ),
+                              _DashFilterChip(
+                                label: 'Borc',
+                                icon: Icons.trending_down_rounded,
+                                selected:
+                                    _selectedFilter == _BalanceFilter.debt,
+                                onTap: () => setState(
+                                  () => _selectedFilter = _BalanceFilter.debt,
+                                ),
+                              ),
+                              _DashFilterChip(
+                                label: 'Sifir bakiye',
+                                icon: Icons.balance_rounded,
+                                selected:
+                                    _selectedFilter == _BalanceFilter.zero,
+                                onTap: () => setState(
+                                  () => _selectedFilter = _BalanceFilter.zero,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Siralama',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            prefixIcon: const Icon(Icons.sort_rounded),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<_SortMode>(
+                              isExpanded: true,
+                              value: _sortMode,
+                              items: const [
+                                DropdownMenuItem(
+                                  value: _SortMode.nameAsc,
+                                  child: Text('Ad (A → Z)'),
+                                ),
+                                DropdownMenuItem(
+                                  value: _SortMode.nameDesc,
+                                  child: Text('Ad (Z → A)'),
+                                ),
+                                DropdownMenuItem(
+                                  value: _SortMode.balanceHigh,
+                                  child: Text('Bakiye (yuksek → dusuk)'),
+                                ),
+                                DropdownMenuItem(
+                                  value: _SortMode.balanceLow,
+                                  child: Text('Bakiye (dusuk → yuksek)'),
+                                ),
+                              ],
+                              onChanged: (v) {
+                                if (v != null) {
+                                  setState(() => _sortMode = v);
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                  selected: {_selectedFilter},
-                  onSelectionChanged: (next) {
-                    setState(() {
-                      _selectedFilter = next.first;
-                    });
-                  },
+                  ),
                 ),
               ),
             ),
@@ -236,12 +383,10 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                 ),
               ),
               data: (clients) {
-                final filteredClients = _applyFilters(clients);
+                final filteredClients = _applyFiltersAndSort(clients);
 
                 if (filteredClients.isEmpty) {
-                  final hasSearchOrFilter =
-                      _searchQuery.isNotEmpty ||
-                      _selectedFilter != _BalanceFilter.all;
+                  final hasSearchOrFilter = _hasActiveFilters;
                   return SliverFillRemaining(
                     hasScrollBody: false,
                     child: Center(
@@ -268,16 +413,11 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                             const SizedBox(height: 10),
                             if (hasSearchOrFilter)
                               OutlinedButton.icon(
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() {
-                                    _selectedFilter = _BalanceFilter.all;
-                                  });
-                                },
+                                onPressed: _resetFilters,
                                 icon: const Icon(
                                   Icons.cleaning_services_rounded,
                                 ),
-                                label: const Text('Filtreleri Temizle'),
+                                label: const Text('Filtreleri temizle'),
                               )
                             else
                               FilledButton.icon(
@@ -285,7 +425,7 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                                 icon: const Icon(
                                   Icons.person_add_alt_1_rounded,
                                 ),
-                                label: const Text('Ilk Musteriyi Ekle'),
+                                label: const Text('Ilk musteriyi ekle'),
                               ),
                           ],
                         ),
@@ -295,7 +435,7 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                 }
 
                 return SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 110),
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 28),
                   sliver: SliverList.builder(
                     itemCount: filteredClients.length,
                     itemBuilder: (context, index) {
@@ -438,11 +578,61 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/clients/new'),
-        backgroundColor: AppColors.primaryColor,
-        icon: const Icon(Icons.person_add_alt_1_rounded),
-        label: const Text('Musteri Ekle'),
+    );
+  }
+}
+
+class _DashFilterChip extends StatelessWidget {
+  const _DashFilterChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Material(
+        color: selected
+            ? AppColors.primaryColor.withAlpha(40)
+            : Colors.white.withAlpha(245),
+        borderRadius: BorderRadius.circular(99),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(99),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 18,
+                  color: selected
+                      ? AppColors.primaryColor
+                      : AppColors.textColor.withAlpha(160),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: selected
+                        ? AppColors.primaryColor
+                        : AppColors.textColor.withAlpha(200),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

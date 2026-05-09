@@ -31,6 +31,20 @@ class ClientsNotifier extends AsyncNotifier<List<ClientModel>> {
       () => ref.read(clientRepositoryProvider).getClients(),
     );
   }
+
+  Future<void> deleteClient(String id) async {
+    final previous = state.when(
+      data: (value) => value,
+      loading: () => const <ClientModel>[],
+      error: (_, __) => const <ClientModel>[],
+    );
+
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(clientRepositoryProvider).deleteClient(id);
+      return previous.where((c) => c.id != id).toList();
+    });
+  }
 }
 
 final clientsNotifierProvider =

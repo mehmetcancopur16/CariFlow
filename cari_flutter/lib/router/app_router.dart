@@ -11,6 +11,7 @@ import '../features/auth/presentation/screens/register_screen.dart';
 import '../features/clients/presentation/screens/add_client_screen.dart';
 import '../features/clients/presentation/screens/client_detail_screen.dart';
 import '../features/clients/presentation/screens/clients_list_screen.dart';
+import '../features/clients/presentation/screens/registered_clients_screen.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
 import '../features/transactions/presentation/screens/quick_transaction_screen.dart';
 import '../shell/app_shell.dart';
@@ -44,6 +45,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/',
             name: 'home',
             builder: (context, state) => const ClientsListScreen(),
+          ),
+          GoRoute(
+            path: '/clients',
+            name: 'clients',
+            builder: (context, state) => const RegisteredClientsScreen(),
           ),
           GoRoute(
             path: '/clients/new',
