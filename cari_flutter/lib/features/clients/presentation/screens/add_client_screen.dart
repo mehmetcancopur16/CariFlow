@@ -21,6 +21,9 @@ class _AddClientScreenState extends ConsumerState<AddClientScreen> {
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _addressController = TextEditingController();
+  final _contactPersonController = TextEditingController();
+  final _taxIdController = TextEditingController();
+  final _websiteController = TextEditingController();
   final _notesController = TextEditingController();
   bool _saving = false;
 
@@ -32,23 +35,50 @@ class _AddClientScreenState extends ConsumerState<AddClientScreen> {
     _phoneController.dispose();
     _emailController.dispose();
     _addressController.dispose();
+    _contactPersonController.dispose();
+    _taxIdController.dispose();
+    _websiteController.dispose();
     _notesController.dispose();
     super.dispose();
   }
 
+  String _composedNotes() {
+    final lines = <String>[];
+    final cp = _contactPersonController.text.trim();
+    final tax = _taxIdController.text.trim();
+    final web = _websiteController.text.trim();
+    if (cp.isNotEmpty) lines.add('Yetkili: $cp');
+    if (tax.isNotEmpty) lines.add('Vergi/TC: $tax');
+    if (web.isNotEmpty) lines.add('Web: $web');
+    final free = _notesController.text.trim();
+    if (free.isNotEmpty) lines.add(free);
+    return lines.join('\n');
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final composedNotes = _composedNotes();
+    if (composedNotes.length > 2000) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Notlar (ticari + serbest) toplam 2000 karakteri gecemez',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
     setState(() => _saving = true);
     try {
       final payload = <String, dynamic>{'name': _nameController.text.trim()};
       final phone = _phoneController.text.trim();
       final email = _emailController.text.trim();
       final address = _addressController.text.trim();
-      final notes = _notesController.text.trim();
       if (phone.isNotEmpty) payload['phone'] = phone;
       if (email.isNotEmpty) payload['email'] = email;
       if (address.isNotEmpty) payload['address'] = address;
-      if (notes.isNotEmpty) payload['notes'] = notes;
+      if (composedNotes.isNotEmpty) payload['notes'] = composedNotes;
 
       await ref.read(clientsNotifierProvider.notifier).addClient(payload);
       ref.invalidate(dashboardProvider);
@@ -327,10 +357,59 @@ class _AddClientScreenState extends ConsumerState<AddClientScreen> {
                               ),
                               const SizedBox(height: 28),
                               _sectionHeader(
+                                icon: Icons.business_center_rounded,
+                                title: 'Ticari ve yetkili (opsiyonel)',
+                                subtitle:
+                                    'Bu alanlar tek bir "notlar" alaninda birlestirilir; '
+                                    'backend\'de ayri alan yoktur.',
+                                accent: const Color(0xFF0D9488),
+                              ),
+                              const SizedBox(height: 14),
+                              _fieldCard(
+                                children: [
+                                  TextFormField(
+                                    controller: _contactPersonController,
+                                    textCapitalization:
+                                        TextCapitalization.words,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Yetkili kisi',
+                                      hintText: 'Iletisim kurulacak kisi',
+                                      border: OutlineInputBorder(),
+                                      prefixIcon: Icon(
+                                        Icons.person_outline_rounded,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  TextFormField(
+                                    controller: _taxIdController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Vergi no / TC',
+                                      hintText: 'Ticari veya bireysel',
+                                      border: OutlineInputBorder(),
+                                      prefixIcon: Icon(Icons.numbers_rounded),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  TextFormField(
+                                    controller: _websiteController,
+                                    keyboardType: TextInputType.url,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Web sitesi',
+                                      hintText: 'https://',
+                                      border: OutlineInputBorder(),
+                                      prefixIcon: Icon(Icons.language_rounded),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 28),
+                              _sectionHeader(
                                 icon: Icons.sticky_note_2_rounded,
                                 title: 'Notlar',
                                 subtitle:
-                                    'Ozel anlasmalar, risk notu veya hatirlatmalar icin serbest metin.',
+                                    'Ozel anlasmalar, risk notu veya hatirlatmalar. '
+                                    'Ustteki ticari satirlarla birlikte en fazla 2000 karakter.',
                                 accent: const Color(0xFF7C3AED),
                               ),
                               const SizedBox(height: 14),
@@ -341,15 +420,12 @@ class _AddClientScreenState extends ConsumerState<AddClientScreen> {
                                     minLines: 4,
                                     maxLines: 8,
                                     decoration: const InputDecoration(
-                                      labelText: 'Ic notlar',
+                                      labelText: 'Serbest notlar',
                                       hintText:
                                           'Sadece sizin gorebileceginiz notlar...',
                                       alignLabelWithHint: true,
                                       border: OutlineInputBorder(),
                                     ),
-                                    maxLength: 2000,
-                                    maxLengthEnforcement:
-                                        MaxLengthEnforcement.enforced,
                                   ),
                                 ],
                               ),

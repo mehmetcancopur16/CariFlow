@@ -8,6 +8,7 @@ import '../../../../core/network/api_error_mapper.dart';
 import '../../../transactions/presentation/providers/dashboard_provider.dart';
 import '../../data/models/client_model.dart';
 import '../providers/clients_provider.dart';
+import '../widgets/edit_client_bottom_sheet.dart';
 
 enum _BalanceFilter { all, receivable, debt, zero }
 
@@ -102,6 +103,16 @@ class _RegisteredClientsScreenState
         sorted.sort((a, b) => a.currentBalance.compareTo(b.currentBalance));
     }
     return sorted;
+  }
+
+  Future<void> _openEditSheet(ClientModel client) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withAlpha(100),
+      builder: (ctx) => EditClientBottomSheet(client: client),
+    );
   }
 
   Future<void> _confirmDelete(ClientModel client) async {
@@ -510,6 +521,8 @@ class _RegisteredClientsScreenState
                                   onSelected: (v) {
                                     if (v == 'detail') {
                                       context.go('/client/${client.id}');
+                                    } else if (v == 'edit') {
+                                      _openEditSheet(client);
                                     } else if (v == 'delete') {
                                       _confirmDelete(client);
                                     }
@@ -520,6 +533,14 @@ class _RegisteredClientsScreenState
                                       child: ListTile(
                                         leading: Icon(Icons.visibility_rounded),
                                         title: Text('Detay'),
+                                        contentPadding: EdgeInsets.zero,
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'edit',
+                                      child: ListTile(
+                                        leading: Icon(Icons.edit_rounded),
+                                        title: Text('Duzenle'),
                                         contentPadding: EdgeInsets.zero,
                                       ),
                                     ),

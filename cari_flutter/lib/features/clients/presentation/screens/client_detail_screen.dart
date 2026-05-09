@@ -48,7 +48,7 @@ class ClientDetailScreen extends ConsumerWidget {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      showDragHandle: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => EditClientBottomSheet(client: client),
     );
   }
