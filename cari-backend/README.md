@@ -29,6 +29,12 @@ cp .env.example .env
 npm run dev
 ```
 
+Sade terminal ciktilari icin:
+
+```bash
+npm run dev:clean
+```
+
 Production:
 
 ```bash
@@ -67,4 +73,5 @@ Seeder demo kullanicilari:
 
 API dokumani:
 
-- `http://localhost:3000/api-docs`
+- `http://localhost:3000/api-docs/`
+- `http://localhost:3000/swagger` (alias)

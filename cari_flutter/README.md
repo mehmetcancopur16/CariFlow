@@ -14,6 +14,12 @@ flutter pub get
 flutter run
 ```
 
+Sade terminal ciktilari icin:
+
+```bash
+bash scripts/run-clean.sh
+```
+
 ## Backend Baglantisi
 
 Varsayilan API base URL:

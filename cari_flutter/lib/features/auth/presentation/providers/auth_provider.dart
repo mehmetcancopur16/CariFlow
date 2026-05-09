@@ -70,6 +70,11 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       return const AuthState(status: AuthStatus.unauthenticated);
     });
   }
+
+  /// Updates cached user after profile fetch or PATCH /users/me (email unchanged on server).
+  void setAuthenticatedUser(UserModel user) {
+    state = AsyncData(AuthState(status: AuthStatus.authenticated, user: user));
+  }
 }
 
 final authNotifierProvider = AsyncNotifierProvider<AuthNotifier, AuthState>(

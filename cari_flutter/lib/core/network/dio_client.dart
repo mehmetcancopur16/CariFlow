@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:io';
@@ -30,6 +31,12 @@ class DioClient {
   bool _isRefreshing = false;
 
   void configureCertificatePinning() {
+    // Web platformunda dart:io adapter'lari desteklenmez.
+    // Browser adapter ile devam etmezsek istekler daha request gitmeden patlar.
+    if (kIsWeb) {
+      return;
+    }
+
     // NOTE: Replace with your real production certificate SHA-256 fingerprints.
     const pinnedSha256Fingerprints = <String>[
       'SHA256 fingerprint of your server certificate',

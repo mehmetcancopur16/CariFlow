@@ -15,6 +15,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    companyName: { type: String, default: '' },
+    taxOffice: { type: String, default: '' },
+    taxId: { type: String, default: '' },
+    companyPhone: { type: String, default: '' },
+    companyAddress: { type: String, default: '' },
   },
   { timestamps: true }
 );

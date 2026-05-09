@@ -3,7 +3,10 @@ const authMiddleware = require('../middlewares/auth.middleware');
 const validateBody = require('../middlewares/validate.middleware');
 const {
   createTransactionSchema,
+  updateTransactionSchema,
   createTransaction,
+  deleteTransaction,
+  updateTransaction,
   getDashboardSummary,
 } = require('../controllers/transaction.controller');
 
@@ -78,5 +81,13 @@ router.get('/dashboard/summary', getDashboardSummary);
  *         description: Client not found
  */
 router.post('/', validateBody(createTransactionSchema), createTransaction);
+
+router.put(
+  '/:id',
+  validateBody(updateTransactionSchema),
+  updateTransaction
+);
+
+router.delete('/:id', deleteTransaction);
 
 module.exports = router;

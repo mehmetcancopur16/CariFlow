@@ -52,6 +52,40 @@ class AuthRepository {
     return _secureStorageService.clearTokens();
   }
 
+  Future<UserModel> fetchProfile() async {
+    final response = await _dio.get<Map<String, dynamic>>(ApiConstants.userMe);
+    final data = response.data;
+    if (data == null || data['data'] is! Map<String, dynamic>) {
+      throw Exception('Invalid profile response');
+    }
+    return UserModel.fromJson(data['data'] as Map<String, dynamic>);
+  }
+
+  Future<UserModel> updateProfile(Map<String, dynamic> body) async {
+    final response = await _dio.patch<Map<String, dynamic>>(
+      ApiConstants.userMe,
+      data: body,
+    );
+    final data = response.data;
+    if (data == null || data['data'] is! Map<String, dynamic>) {
+      throw Exception('Invalid profile update response');
+    }
+    return UserModel.fromJson(data['data'] as Map<String, dynamic>);
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _dio.post<Map<String, dynamic>>(
+      ApiConstants.userChangePassword,
+      data: {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      },
+    );
+  }
+
   String? _extractUserIdFromJwt(String token) {
     final parts = token.split('.');
     if (parts.length != 3) {

@@ -5,6 +5,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
+    "dev:clean": "DOTENV_CONFIG_QUIET=true nodemon --quiet src/app.js",
     "seed": "node scripts/seed.js",
     "seed:reset": "node scripts/seed.js --reset",
     "test": "echo \"Error: no test specified\" && exit 1"

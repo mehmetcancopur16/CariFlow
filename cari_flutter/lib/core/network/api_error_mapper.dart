@@ -22,6 +22,9 @@ class ApiErrorMapper {
           return 'Baglanti hatasi. Internetinizi kontrol edin.';
         case DioExceptionType.badResponse:
           return 'Sunucu hatasi olustu.';
+        case DioExceptionType.unknown:
+          // Web tarafinda CORS/adapter/network sorunlari genelde burada duser.
+          return 'Baglanti kurulamadi. Sunucu acik mi ve adres dogru mu kontrol edin.';
         default:
           return 'Beklenmeyen bir hata olustu.';
       }

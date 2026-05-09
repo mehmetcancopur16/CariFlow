@@ -1,7 +1,11 @@
 const mongoose = require('mongoose');
 const { z } = require('zod');
 const Client = require('../models/Client.model');
-const { processTransaction } = require('../services/balance.service');
+const {
+  processTransaction,
+  deleteTransactionById,
+  updateTransactionById,
+} = require('../services/balance.service');
 
 const createTransactionSchema = z.object({
   clientId: z
@@ -10,6 +14,12 @@ const createTransactionSchema = z.object({
     .refine((id) => mongoose.Types.ObjectId.isValid(id), {
       message: 'Invalid clientId',
     }),
+  type: z.enum(['debt', 'payment']),
+  amount: z.number().min(0.01),
+  description: z.string().optional(),
+});
+
+const updateTransactionSchema = z.object({
   type: z.enum(['debt', 'payment']),
   amount: z.number().min(0.01),
   description: z.string().optional(),
@@ -58,6 +68,85 @@ async function createTransaction(req, res, next) {
       return res.status(404).json({
         success: false,
         message: 'Client not found',
+      });
+    }
+    return next(err);
+  }
+}
+
+/**
+ * @type {import('express').RequestHandler}
+ */
+/**
+ * @type {import('express').RequestHandler}
+ */
+async function deleteTransaction(req, res, next) {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid transaction id',
+      });
+    }
+
+    await deleteTransactionById(id, req.user.userId);
+    return res.json({ success: true, message: 'Transaction removed' });
+  } catch (err) {
+    if (err.message === 'TRANSACTION_NOT_FOUND') {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found',
+      });
+    }
+    if (err.message === 'CLIENT_NOT_FOUND') {
+      return res.status(404).json({
+        success: false,
+        message: 'Client not found',
+      });
+    }
+    return next(err);
+  }
+}
+
+/**
+ * @type {import('express').RequestHandler}
+ */
+async function updateTransaction(req, res, next) {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid transaction id',
+      });
+    }
+
+    const { type, amount, description } = req.body;
+    const transaction = await updateTransactionById(id, req.user.userId, {
+      type,
+      amount,
+      description,
+    });
+
+    return res.json({ success: true, data: transaction });
+  } catch (err) {
+    if (err.message === 'TRANSACTION_NOT_FOUND') {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found',
+      });
+    }
+    if (err.message === 'CLIENT_NOT_FOUND') {
+      return res.status(404).json({
+        success: false,
+        message: 'Client not found',
+      });
+    }
+    if (err.message === 'CLIENT_INACTIVE') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot edit transactions for an inactive client',
       });
     }
     return next(err);
@@ -123,6 +212,9 @@ async function getDashboardSummary(req, res, next) {
 
 module.exports = {
   createTransactionSchema,
+  updateTransactionSchema,
   createTransaction,
+  deleteTransaction,
+  updateTransaction,
   getDashboardSummary,
 };
