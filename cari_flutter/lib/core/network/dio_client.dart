@@ -31,27 +31,23 @@ class DioClient {
   bool _isRefreshing = false;
 
   void configureCertificatePinning() {
-    // Web platformunda dart:io adapter'lari desteklenmez.
-    // Browser adapter ile devam etmezsek istekler daha request gitmeden patlar.
     if (kIsWeb) {
       return;
     }
 
-    // NOTE: Replace with your real production certificate SHA-256 fingerprints.
-    const pinnedSha256Fingerprints = <String>[
-      'SHA256 fingerprint of your server certificate',
-    ];
+    // Populate with production SHA-256 fingerprints to enable pinning.
+    // Empty list keeps default trust validation (no pinning, no insecure bypass).
+    const pinnedSha256Fingerprints = <String>[];
+
+    if (pinnedSha256Fingerprints.isEmpty) {
+      return;
+    }
 
     final adapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
         client.badCertificateCallback =
             (X509Certificate cert, String host, int port) {
-              // Development convenience for local non-production endpoints.
-              if (host == '10.0.2.2' || host == 'localhost') {
-                return true;
-              }
-
               final certSha256 = sha256
                   .convert(utf8.encode(cert.pem))
                   .toString()

@@ -19,11 +19,13 @@ coverage/
 
 # OS
 .DS_Store
+**/.DS_Store
 Thumbs.db
 
 # IDE
 .idea/
 .vscode/
+.cursor/
 *.swp
 *.swo
 

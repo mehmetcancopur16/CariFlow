@@ -2,17 +2,30 @@ const { z } = require('zod');
 const User = require('../models/User.model');
 
 const updateProfileSchema = z.object({
-  companyName: z.string().optional(),
-  taxOffice: z.string().optional(),
-  taxId: z.string().optional(),
-  companyPhone: z.string().optional(),
-  companyAddress: z.string().optional(),
+  companyName: z.string().max(120).optional(),
+  taxOffice: z.string().max(80).optional(),
+  taxId: z.string().max(40).optional(),
+  companyPhone: z.string().max(40).optional(),
+  companyAddress: z.string().max(240).optional(),
 });
 
-const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1),
-  newPassword: z.string().min(6),
-});
+const strongPassword = z
+  .string()
+  .min(8, 'Password must be at least 8 characters')
+  .regex(/[A-Z]/, 'Password must contain an uppercase letter')
+  .regex(/[a-z]/, 'Password must contain a lowercase letter')
+  .regex(/\d/, 'Password must contain a digit')
+  .regex(/[^A-Za-z0-9]/, 'Password must contain a special character');
+
+const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1),
+    newPassword: strongPassword,
+  })
+  .refine((data) => data.currentPassword !== data.newPassword, {
+    message: 'New password must differ from current password',
+    path: ['newPassword'],
+  });
 
 function toPublicUser(user) {
   if (!user) return null;

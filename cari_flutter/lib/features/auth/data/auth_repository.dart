@@ -87,16 +87,21 @@ class AuthRepository {
   }
 
   String? _extractUserIdFromJwt(String token) {
-    final parts = token.split('.');
-    if (parts.length != 3) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) {
+        return null;
+      }
+
+      final normalized = base64Url.normalize(parts[1]);
+      final decoded = jsonDecode(utf8.decode(base64Url.decode(normalized)));
+      if (decoded is! Map<String, dynamic>) {
+        return null;
+      }
+      return decoded['userId']?.toString();
+    } catch (_) {
       return null;
     }
-
-    final normalized = base64Url.normalize(parts[1]);
-    final payloadMap =
-        jsonDecode(utf8.decode(base64Url.decode(normalized)))
-            as Map<String, dynamic>;
-    return payloadMap['userId']?.toString();
   }
 }
 

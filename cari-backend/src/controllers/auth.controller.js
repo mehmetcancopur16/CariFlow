@@ -2,13 +2,21 @@ const jwt = require('jsonwebtoken');
 const { z } = require('zod');
 const User = require('../models/User.model');
 
+const strongPassword = z
+  .string()
+  .min(8, 'Password must be at least 8 characters')
+  .regex(/[A-Z]/, 'Password must contain an uppercase letter')
+  .regex(/[a-z]/, 'Password must contain a lowercase letter')
+  .regex(/\d/, 'Password must contain a digit')
+  .regex(/[^A-Za-z0-9]/, 'Password must contain a special character');
+
 const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  email: z.string().email().transform((value) => value.toLowerCase().trim()),
+  password: strongPassword,
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email().transform((value) => value.toLowerCase().trim()),
   password: z.string().min(1),
 });
 
@@ -60,11 +68,10 @@ async function login(req, res, next) {
     }
 
     const accessSecret = process.env.JWT_SECRET;
-    const refreshSecret =
-      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+    const refreshSecret = process.env.JWT_REFRESH_SECRET;
 
     if (!accessSecret || !refreshSecret) {
-      return next(new Error('JWT_SECRET is not configured'));
+      return next(new Error('JWT secrets are not configured'));
     }
 
     const userId = user._id.toString();
@@ -97,8 +104,8 @@ async function refresh(req, res) {
         message: 'refreshToken is required',
       });
     }
-    const refreshSecret =
-      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+
+    const refreshSecret = process.env.JWT_REFRESH_SECRET;
     const accessSecret = process.env.JWT_SECRET;
 
     if (!refreshSecret || !accessSecret) {

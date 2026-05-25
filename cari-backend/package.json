@@ -1,26 +1,22 @@
 {
   "name": "cari-backend",
   "version": "1.0.0",
+  "private": true,
+  "description": "CariFlow REST API — JWT auth, client and transaction management, dashboard.",
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "dev:clean": "DOTENV_CONFIG_QUIET=true nodemon --quiet src/app.js",
     "seed": "node scripts/seed.js",
-    "seed:reset": "node scripts/seed.js --reset",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "seed:reset": "node scripts/seed.js --reset"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "compression": "^1.8.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^8.4.1",
     "helmet": "^8.1.0",
     "hpp": "^0.2.3",

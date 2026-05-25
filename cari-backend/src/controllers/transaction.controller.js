@@ -77,9 +77,6 @@ async function createTransaction(req, res, next) {
 /**
  * @type {import('express').RequestHandler}
  */
-/**
- * @type {import('express').RequestHandler}
- */
 async function deleteTransaction(req, res, next) {
   try {
     const { id } = req.params;
